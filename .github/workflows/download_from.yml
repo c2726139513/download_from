@@ -1,0 +1,35 @@
+name: Download_From
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      if_artifacts:
+        description: 'If the URL is for an artifacts package'
+        required: true
+        default: 'false'
+      url:
+        description: 'The URL that you want to download from'
+        required: true
+        default: ''
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    
+    steps:
+    - uses: actions/checkout@v1
+    - name: Download By Actions
+      run: |
+        cd $HOME
+        mkdir Downloads
+        if [ ${{ github.event.inputs.if_artifacts }} = "false" ]; then
+           wget -P ./Downloads ${{ github.event.inputs.url }} 
+        else
+           suffix=$(echo ${{ github.event.inputs.url }} |awk -F "/" '{print $4"/"$5"/actions/"$8"/"$9"/zip"}')
+           curl -o ./Downloads/1.zip -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -H "Accept: application/vnd.github.v3+json" -L https://api.github.com/repos/$suffix 
+        fi
+    - name: Upload your file
+      run: |
+        curl -sL https://git.io/file-transfer | sh
+        ./transfer wet $HOME/Downloads/
